@@ -2,7 +2,7 @@ package census_ananlyzer.controller;
 
 
 import java.io.File;
-
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,12 +13,16 @@ import java.util.Scanner;
 
 import census_ananlyzer.exceptions.CustomExceptions;
 import census_ananlyzer.model.CensusData;
+import census_ananlyzer.model.StateCSVFile;
 import census_ananlyzer.utility.ExceptionType;
 
 public class CensusAnalyzerMain {
     
     private static Scanner scanner = new Scanner(System.in);
     private static ArrayList<CensusData> censusList = new ArrayList<>();
+    public static List<StateCSVFile> stateList = new ArrayList<>();
+    public static int i = 0;
+    
     
     private static void createFile(File file) {
         try {
@@ -31,6 +35,32 @@ public class CensusAnalyzerMain {
             e.printStackTrace();
         }
     }
+    public static int loadStateData(String filePath) throws Exception {
+        try {
+            i = 0;
+            stateList = new ArrayList<>();
+            CSVReader reader = new CSVReader(new FileReader(filePath));
+            List<String[]> data = reader.readAll();
+            data.stream().forEach(n -> {
+                Iterator<String> iterate = Arrays.stream(n).iterator();
+                String srNo = iterate.next();
+                String state = iterate.next();
+                String TIN = iterate.next();
+                String stateCode = iterate.next();
+                if (i == 0)
+                    i = 1;
+                else
+                    stateList.add(new StateCSVFile(Integer.valueOf(srNo), state, Integer.valueOf(TIN), stateCode));
+            });
+            reader.close();
+        } catch (FileNotFoundException e) {
+            throw new CustomExceptions(e.getMessage(), ExceptionType.File_Not_Found);
+        } catch (IllegalStateException e) {
+            throw new CustomExceptions(e.getMessage(), ExceptionType.Parse_Error);
+        }
+        return stateList.size();
+    }
+    
     
     public static int loadCensusData(String filePath) throws Exception {
         try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
@@ -65,7 +95,8 @@ public class CensusAnalyzerMain {
         System.out.println("Choose an option:");
         System.out.println("1. Create file");
         System.out.println("2. Load census data");
-        System.out.println("3. Exit");
+        System.out.println("3. Load State Data");
+        System.out.println("4. Exit");
         
         int userchoice = scanner.nextInt();
         switch (userchoice) {
@@ -77,11 +108,14 @@ public class CensusAnalyzerMain {
                 System.out.println("Number of entries loaded: " + count);
                 break;
             case 3:
+    			loadStateData(filePath);
+    			break;
+            case 4:
                 System.exit(0);
             default:
                 System.out.println("Invalid choice");
         }
-    } while (choice != 3);
+    } while (choice != 4);
     
     }
     
